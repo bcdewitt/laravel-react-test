@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
 
 function App() {
+  const PRODUCT_URL = `${process.env.REACT_APP_API_URL}/products`
+  const [products, setProducts] = useState([])
+  useEffect(() => {
+    fetch(PRODUCT_URL).then(r => r.json()).then(setProducts);
+  }, [PRODUCT_URL]);
+
   return (
     <div className="App">
       <header className="App-header">
@@ -18,6 +24,7 @@ function App() {
         >
           Learn React
         </a>
+        <pre style={{textAlign: 'left'}}>{JSON.stringify(products, null, ' ')}</pre>
       </header>
     </div>
   );
