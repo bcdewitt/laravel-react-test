@@ -1,0 +1,67 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        path:
+    - name: Create .env from template
+      env:
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        APP_KEY: ${{ secrets.APP_KEY }}
+      run: |
+        cd api
+        envsubst < .env.tpl.production > .env
+        cd ..
+    - name: Create Apache conf files from templates
+      env:
+        PORT: 80
+        SERVER_NAME: localhost
+        APACHE_LOG_DIR: /var/log/apache2
+        PROJECT_DIR: /var/www
+      run: |
+        mkdir config
+        envsubst < ./000-default.tpl.conf > ./config/000-default.conf
+        envsubst < ./ports.tpl.conf > ./config/ports.conf
+    - name: Install Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
+    - name: Install npm dependencies
+      run: npm install --prefix ./client --only=prod
+    - name: Build the client
+      run: npm run build --prefix ./client
+      env:
+        NODE_ENV: production
+        REACT_APP_API_URL: /api
+    - name: Install composer dependencies
+      run: composer install -d ./api --no-dev -q --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: "us-east-2"
+    - name: AWS Deploy push
+      run: >-
+        aws deploy push
+        --application-name laravel-react-test
+        --description "This is a revision for the fm-server"
+        --s3-location s3://fm-deployments-123/fm-server.zip
+        --source .
+    - name: AWS Create Deploy
+      run: >-
+        aws deploy create-deployment
+        --application-name laravel-react-test
+        --deployment-config-name CodeDeployDefault.OneAtATime
+        --deployment-group-name fm-server
+        --file-exists-behavior OVERWRITE
+        --s3-location bucket=fm-deployments-123,key=fm-server.zip,bundleType=zip

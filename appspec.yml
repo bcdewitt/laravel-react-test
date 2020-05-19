@@ -1,0 +1,31 @@
+version: 0.0
+os: linux
+files:
+  - source: ./api
+    destination: /var/www/api
+  - source: ./client
+    destination: /var/www/client
+  - source: ./config/000-default.conf
+    destination: /etc/apache2/sites-available
+  - source: ./config/ports.conf
+    destination: /etc/apache2
+permissions:
+  - object: /var/www
+    pattern: "**"
+    owner: www-data
+    group: www-data
+
+hooks:
+  # AWS samples show this hook is good for installing dependencies
+  # (see https://github.com/aws-samples/aws-codedeploy-samples/tree/master/applications/SampleApp_Linux)
+  BeforeInstall:
+    - location: scripts/install_dependencies.sh
+      runas: root
+  AfterInstall:
+    - location: scripts/start_server.sh
+      timeout: 60
+      runas: root
+  ApplicationStop:
+    - location: scripts/stop_server.sh
+      timeout: 60
+      runas: root
