@@ -4,9 +4,14 @@ import './App.css';
 
 function App() {
   const PRODUCT_URL = `${process.env.REACT_APP_API_URL}/products`
-  const [products, setProducts] = useState([])
+  const [products, setProducts] = useState({
+    loading: true,
+    data: []
+  })
   useEffect(() => {
-    fetch(PRODUCT_URL).then(r => r.json()).then(setProducts);
+    fetch(PRODUCT_URL).then(r => r.json()).then(d => {
+      setProducts(Object.assign(d, { loading: false }))
+    });
   }, [PRODUCT_URL]);
 
   return (
@@ -16,6 +21,7 @@ function App() {
         <p>
           Edit <code>src/App.js</code> and save to reload.
         </p>
+
         <a
           className="App-link"
           href="https://reactjs.org"
@@ -24,6 +30,12 @@ function App() {
         >
           Learn React
         </a>
+
+        <h1>
+          Products
+          {products.loading && ' (Loading...)'}
+        </h1>
+
         <pre style={{textAlign: 'left'}}>{JSON.stringify(products, null, ' ')}</pre>
       </header>
     </div>
