@@ -36,7 +36,12 @@ function App() {
           {products.loading && ' (Loading...)'}
         </h1>
 
-        <pre style={{textAlign: 'left'}}>{JSON.stringify(products, null, ' ')}</pre>
+        <ul style={{ textAlign: 'left' }}>{products.data.map((p, idx) =>
+          <li key={idx}>
+            <div>${p.price.toFixed(2)} - {p.title}</div>
+            <div><strong>Description</strong>: {p.description}</div>
+          </li>
+        )}</ul>
       </header>
     </div>
   );
